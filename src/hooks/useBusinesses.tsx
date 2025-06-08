@@ -6,7 +6,11 @@ import { useToast } from './use-toast';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Business = Tables<'businesses'>;
-type BusinessInsert = Omit<Business, 'id' | 'created_at' | 'updated_at' | 'user_id'>;
+type BusinessInsert = Omit<Business, 'id' | 'created_at' | 'updated_at' | 'user_id'> & {
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+};
 
 export const useBusinesses = () => {
   const { user } = useAuth();
