@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Wizard from "./pages/Wizard";
 import Dashboard from "./pages/Dashboard";
+import ConsumerDashboard from "./pages/ConsumerDashboard";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/consumer-dashboard" 
+              element={
+                <ProtectedRoute>
+                  <ConsumerDashboard />
                 </ProtectedRoute>
               } 
             />
