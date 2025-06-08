@@ -12,6 +12,22 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+// Simple authorization check
+const isAuthorized = (req: Request) => {
+  const authHeader = req.headers.get('authorization')
+  console.log('Authorization header received:', authHeader ? 'Present' : 'Missing')
+  
+  // Allow requests with any Bearer token for now
+  // You can make this more secure by checking against a specific token
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    console.log('Authorization successful')
+    return true
+  }
+  
+  console.log('Authorization failed - missing or invalid header')
+  return false
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -22,6 +38,20 @@ serve(async (req) => {
     console.log('Dashboard webhook proxy called:', req.method)
     
     if (req.method === 'POST') {
+      // Check authorization for POST requests (from n8n)
+      if (!isAuthorized(req)) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Authorization failed - please check your credentials',
+            details: 'Missing or invalid authorization header. Please add "Authorization: Bearer your-token" header to your n8n HTTP Request node.'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401,
+          }
+        )
+      }
+
       // This is incoming webhook data from n8n
       const webhookData = await req.json()
       console.log('Received webhook data:', JSON.stringify(webhookData, null, 2))
@@ -160,6 +190,7 @@ serve(async (req) => {
     }
     
     if (req.method === 'GET') {
+      // GET requests don't need authorization (for dashboard fetching)
       // Try to get data from database
       const { data: storedData, error } = await supabase
         .from('webhook_data')
