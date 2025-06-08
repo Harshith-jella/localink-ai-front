@@ -8,25 +8,25 @@ import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 type Business = Tables<'businesses'>;
 type BusinessInsert = TablesInsert<'businesses'>;
 
-// Enhanced webhook function to send data to n8n
+// Enhanced webhook function to send data to the dashboard webhook
 const sendToWebhook = async (businessData: any) => {
   try {
-    console.log('Sending data to webhook:', businessData);
+    console.log('Sending business data to dashboard webhook:', businessData);
     
-    const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink', {
+    const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      mode: 'cors', // Try CORS first
+      mode: 'cors',
       body: JSON.stringify(businessData),
     });
     
     if (!response.ok) {
-      console.warn('Webhook failed with status:', response.status, response.statusText);
+      console.warn('Dashboard webhook failed with status:', response.status, response.statusText);
       // Try with no-cors as fallback
-      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink', {
+      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,17 +34,17 @@ const sendToWebhook = async (businessData: any) => {
         mode: 'no-cors',
         body: JSON.stringify(businessData),
       });
-      console.log('Webhook sent with no-cors mode');
+      console.log('Dashboard webhook sent with no-cors mode');
     } else {
       const responseData = await response.text();
-      console.log('Webhook response:', responseData);
-      console.log('Successfully sent data to webhook');
+      console.log('Dashboard webhook response:', responseData);
+      console.log('Successfully sent business data to dashboard webhook');
     }
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('Dashboard webhook error:', error);
     // Fallback attempt with no-cors
     try {
-      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink', {
+      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,9 +52,9 @@ const sendToWebhook = async (businessData: any) => {
         mode: 'no-cors',
         body: JSON.stringify(businessData),
       });
-      console.log('Webhook sent via fallback no-cors mode');
+      console.log('Dashboard webhook sent via fallback no-cors mode');
     } catch (fallbackError) {
-      console.error('Fallback webhook attempt also failed:', fallbackError);
+      console.error('Fallback dashboard webhook attempt also failed:', fallbackError);
     }
   }
 };
@@ -105,9 +105,9 @@ export const useBusinesses = () => {
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
       
-      // Enhanced webhook payload
+      // Enhanced webhook payload for dashboard
       const webhookPayload = {
-        event: 'business_created',
+        event: 'business_wizard_completed',
         business: {
           id: data.id,
           name: data.name,
@@ -130,12 +130,12 @@ export const useBusinesses = () => {
         source: 'localink_wizard',
       };
       
-      // Send data to webhook (non-blocking)
+      // Send data to dashboard webhook (non-blocking)
       sendToWebhook(webhookPayload);
       
       toast({
         title: "Business created!",
-        description: "Your business has been successfully added and sent to the webhook.",
+        description: "Your business has been successfully added and sent to the AI dashboard.",
       });
     },
     onError: (error: any) => {

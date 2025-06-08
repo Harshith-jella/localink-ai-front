@@ -3,25 +3,25 @@ import { useMutation } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
-// Enhanced webhook function to send data to n8n
+// Enhanced webhook function to send data to dashboard webhook
 const sendToWebhook = async (userData: any) => {
   try {
-    console.log('Sending consumer data to webhook:', userData);
+    console.log('Sending consumer data to dashboard webhook:', userData);
     
-    const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink', {
+    const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      mode: 'cors', // Try CORS first
+      mode: 'cors',
       body: JSON.stringify(userData),
     });
     
     if (!response.ok) {
-      console.warn('Webhook failed with status:', response.status, response.statusText);
+      console.warn('Dashboard webhook failed with status:', response.status, response.statusText);
       // Try with no-cors as fallback
-      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink', {
+      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,17 +29,17 @@ const sendToWebhook = async (userData: any) => {
         mode: 'no-cors',
         body: JSON.stringify(userData),
       });
-      console.log('Consumer webhook sent with no-cors mode');
+      console.log('Dashboard webhook sent with no-cors mode');
     } else {
       const responseData = await response.text();
-      console.log('Consumer webhook response:', responseData);
-      console.log('Successfully sent consumer data to webhook');
+      console.log('Dashboard webhook response:', responseData);
+      console.log('Successfully sent consumer data to dashboard webhook');
     }
   } catch (error) {
-    console.error('Consumer webhook error:', error);
+    console.error('Dashboard webhook error:', error);
     // Fallback attempt with no-cors
     try {
-      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink', {
+      await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,9 +47,9 @@ const sendToWebhook = async (userData: any) => {
         mode: 'no-cors',
         body: JSON.stringify(userData),
       });
-      console.log('Consumer webhook sent via fallback no-cors mode');
+      console.log('Dashboard webhook sent via fallback no-cors mode');
     } catch (fallbackError) {
-      console.error('Fallback consumer webhook attempt also failed:', fallbackError);
+      console.error('Fallback dashboard webhook attempt also failed:', fallbackError);
     }
   }
 };
@@ -63,7 +63,7 @@ export const useConsumers = () => {
       if (!user) throw new Error('User not authenticated');
 
       // For consumers, we just process the data without storing in database
-      // but we still send it to the webhook
+      // but we still send it to the dashboard webhook
       return {
         user_id: user.id,
         user_type: 'consumer',
@@ -72,9 +72,9 @@ export const useConsumers = () => {
       };
     },
     onSuccess: async (data) => {
-      // Enhanced webhook payload for consumer
+      // Enhanced webhook payload for dashboard
       const webhookPayload = {
-        event: 'consumer_registered',
+        event: 'consumer_wizard_completed',
         consumer: {
           user_type: 'consumer',
           preferences: data.preferences || {},
@@ -91,12 +91,12 @@ export const useConsumers = () => {
         source: 'localink_wizard',
       };
       
-      // Send data to webhook (non-blocking)
+      // Send data to dashboard webhook (non-blocking)
       sendToWebhook(webhookPayload);
       
       toast({
         title: "Registration completed!",
-        description: "Your information has been processed and sent to the webhook.",
+        description: "Your information has been processed and sent to the AI dashboard.",
       });
     },
     onError: (error: any) => {
