@@ -1,9 +1,11 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
-import { ArrowUp, Search, Zap, Layout, Loader, Copy, Download, RefreshCw } from "lucide-react";
+import { ArrowUp, Search, Zap, Layout, Loader, Copy, Download, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDashboardWebhook } from "@/hooks/useDashboardWebhook";
+import { useState } from "react";
 
 const Dashboard = () => {
   const { 
@@ -14,6 +16,20 @@ const Dashboard = () => {
     triggerSampleWebhook,
     refreshData
   } = useDashboardWebhook();
+
+  const [expandedText, setExpandedText] = useState<{[key: string]: boolean}>({});
+
+  const toggleTextExpansion = (key: string) => {
+    setExpandedText(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const truncateText = (text: string, maxLength: number = 150) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+  };
 
   const aiResults = [
     {
@@ -56,136 +72,190 @@ const Dashboard = () => {
     }
   ];
 
-  const renderPromotionCard = (result: any) => (
-    <Card className="shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg bg-gradient-to-r ${result.gradient} text-white`}>
-              {result.icon}
-            </div>
-            <div className="flex items-center space-x-2">
-              <CardTitle className="text-lg">{result.title}</CardTitle>
-              <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                Available
-              </Badge>
-              {dashboardData?.source === 'n8n_webhook' && (
-                <Badge variant="outline" className="text-green-600 border-green-600">
-                  Live Data
+  const renderPromotionCard = (result: any) => {
+    const textKey = 'promotion-text';
+    const isExpanded = expandedText[textKey];
+    const shouldShowToggle = result.content.length > 150;
+
+    return (
+      <Card className="shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 rounded-lg bg-gradient-to-r ${result.gradient} text-white`}>
+                {result.icon}
+              </div>
+              <div className="flex items-center space-x-2">
+                <CardTitle className="text-lg">{result.title}</CardTitle>
+                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                  Available
                 </Badge>
-              )}
+                {dashboardData?.source === 'n8n_webhook' && (
+                  <Badge variant="outline" className="text-green-600 border-green-600">
+                    Live Data
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <p className="text-muted-foreground leading-relaxed">
-            {result.content}
-          </p>
-          
-          {dashboardData?.personalizedPromotions && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  variant="outline" 
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {isExpanded || !shouldShowToggle ? result.content : truncateText(result.content)}
+              </p>
+              {shouldShowToggle && (
+                <Button
+                  variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(dashboardData.personalizedPromotions!.socialMediaDescription)}
-                  className="flex items-center gap-2"
+                  onClick={() => toggleTextExpansion(textKey)}
+                  className="mt-2 p-0 h-auto font-normal text-primary hover:text-primary/80"
                 >
-                  <Copy className="h-4 w-4" />
-                  Copy Text
+                  {isExpanded ? (
+                    <>Show Less <ChevronUp className="h-4 w-4 ml-1" /></>
+                  ) : (
+                    <>Show More <ChevronDown className="h-4 w-4 ml-1" /></>
+                  )}
                 </Button>
-                {dashboardData.personalizedPromotions.imageUrl && (
+              )}
+            </div>
+            
+            {dashboardData?.personalizedPromotions && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => downloadImage(dashboardData.personalizedPromotions!.imageUrl, 'promotion-image')}
-                    disabled={isLoading}
+                    onClick={() => copyToClipboard(dashboardData.personalizedPromotions!.socialMediaDescription)}
                     className="flex items-center gap-2"
                   >
-                    <Download className="h-4 w-4" />
-                    {isLoading ? 'Downloading...' : 'Download Image'}
+                    <Copy className="h-4 w-4" />
+                    Copy Text
                   </Button>
+                  {dashboardData.personalizedPromotions.imageUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => downloadImage(dashboardData.personalizedPromotions!.imageUrl, 'promotion-image')}
+                      disabled={isLoading}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      {isLoading ? 'Downloading...' : 'Download Image'}
+                    </Button>
+                  )}
+                </div>
+                
+                {dashboardData.personalizedPromotions.imageUrl && (
+                  <div className="mt-4">
+                    <div className="relative group">
+                      <img 
+                        src={dashboardData.personalizedPromotions.imageUrl} 
+                        alt="Promotion visual" 
+                        className="w-full max-w-sm rounded-lg shadow-md transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
+                    </div>
+                  </div>
                 )}
               </div>
-              
-              {dashboardData.personalizedPromotions.imageUrl && (
-                <div className="mt-4">
-                  <img 
-                    src={dashboardData.personalizedPromotions.imageUrl} 
-                    alt="Promotion visual" 
-                    className="w-full max-w-sm rounded-lg shadow-md"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
-  const renderForecastCard = (result: any) => (
-    <Card className="shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg bg-gradient-to-r ${result.gradient} text-white`}>
-              {result.icon}
-            </div>
-            <div className="flex items-center space-x-2">
-              <CardTitle className="text-lg">{result.title}</CardTitle>
-              <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                Available
-              </Badge>
-              {dashboardData?.source === 'n8n_webhook' && (
-                <Badge variant="outline" className="text-green-600 border-green-600">
-                  Live Data
+  const renderForecastCard = (result: any) => {
+    const textKey = 'forecast-text';
+    const isExpanded = expandedText[textKey];
+    const shouldShowToggle = result.content.length > 150;
+
+    return (
+      <Card className="shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 rounded-lg bg-gradient-to-r ${result.gradient} text-white`}>
+                {result.icon}
+              </div>
+              <div className="flex items-center space-x-2">
+                <CardTitle className="text-lg">{result.title}</CardTitle>
+                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                  Available
                 </Badge>
-              )}
+                {dashboardData?.source === 'n8n_webhook' && (
+                  <Badge variant="outline" className="text-green-600 border-green-600">
+                    Live Data
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <p className="text-muted-foreground leading-relaxed">
-            {result.content}
-          </p>
-          
-          {dashboardData?.salesForecast && (
-            <div className="space-y-3">
-              <div className="bg-secondary/50 p-4 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2">Key Insights:</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  {dashboardData.salesForecast.keyInsights?.map((insight, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="mr-2">•</span>
-                      {insight}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  const forecastText = `${dashboardData.salesForecast!.forecast}\n\nKey Insights:\n${dashboardData.salesForecast!.keyInsights?.join('\n') || ''}`;
-                  copyToClipboard(forecastText);
-                }}
-                className="flex items-center gap-2"
-              >
-                <Copy className="h-4 w-4" />
-                Copy Forecast Data
-              </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {isExpanded || !shouldShowToggle ? result.content : truncateText(result.content)}
+              </p>
+              {shouldShowToggle && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleTextExpansion(textKey)}
+                  className="mt-2 p-0 h-auto font-normal text-primary hover:text-primary/80"
+                >
+                  {isExpanded ? (
+                    <>Show Less <ChevronUp className="h-4 w-4 ml-1" /></>
+                  ) : (
+                    <>Show More <ChevronDown className="h-4 w-4 ml-1" /></>
+                  )}
+                </Button>
+              )}
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+            
+            {dashboardData?.salesForecast && (
+              <div className="space-y-3">
+                {dashboardData.salesForecast.projectedRevenue && (
+                  <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
+                    <h4 className="font-semibold text-sm mb-1">Projected Revenue</h4>
+                    <p className="text-2xl font-bold text-primary">{dashboardData.salesForecast.projectedRevenue}</p>
+                  </div>
+                )}
+                
+                <div className="bg-secondary/50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">Key Insights:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {dashboardData.salesForecast.keyInsights?.map((insight, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2 text-primary">•</span>
+                        {insight}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const forecastText = `${dashboardData.salesForecast!.forecast}\n\nProjected Revenue: ${dashboardData.salesForecast!.projectedRevenue || 'N/A'}\n\nKey Insights:\n${dashboardData.salesForecast!.keyInsights?.join('\n') || ''}`;
+                    copyToClipboard(forecastText);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy Forecast Data
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderRegularCard = (result: any) => (
     <Card className="shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden opacity-75">
