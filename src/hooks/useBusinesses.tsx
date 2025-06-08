@@ -81,20 +81,22 @@ export const useBusinesses = () => {
   });
 
   const createBusinessMutation = useMutation({
-    mutationFn: async (business: Omit<BusinessInsert, 'user_id'>) => {
+    mutationFn: async (business: Omit<BusinessInsert, 'user_id'> & { generalHelp?: string }) => {
       if (!user) throw new Error('User not authenticated');
+
+      const { generalHelp, ...businessData } = business;
 
       const { data, error } = await supabase
         .from('businesses')
         .insert({
-          ...business,
+          ...businessData,
           user_id: user.id,
         })
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return { ...data, generalHelp };
     },
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
@@ -111,6 +113,7 @@ export const useBusinesses = () => {
           phone: data.phone,
           email: data.email,
           website: data.website,
+          generalHelp: data.generalHelp || 'not-selected',
           created_at: data.created_at,
         },
         user: {

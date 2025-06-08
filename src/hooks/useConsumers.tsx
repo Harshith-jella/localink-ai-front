@@ -80,6 +80,7 @@ export const useConsumers = () => {
           goals: data.goals,
           challenges: data.challenges,
           preferences: data.preferences || {},
+          generalHelp: data.generalHelp || 'not-selected',
           created_at: data.created_at,
         },
         user: {

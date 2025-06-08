@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navigation from "@/components/Navigation";
 import { ArrowUp, Layout } from "lucide-react";
 import { useBusinesses } from "@/hooks/useBusinesses";
@@ -18,6 +18,7 @@ import AuthModal from "@/components/AuthModal";
 const Wizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [userType, setUserType] = useState("");
+  const [generalHelp, setGeneralHelp] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [formData, setFormData] = useState({
     businessName: "",
@@ -33,7 +34,7 @@ const Wizard = () => {
   const { createConsumerData, isCreating: isCreatingConsumer } = useConsumers();
   const navigate = useNavigate();
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
@@ -67,6 +68,7 @@ const Wizard = () => {
         category: formData.industry,
         description: formData.description,
         address: formData.location,
+        generalHelp: generalHelp
       });
     } else if (userType === 'consumer') {
       createConsumerData({
@@ -74,7 +76,8 @@ const Wizard = () => {
         challenges: formData.challenges,
         preferences: {
           location: formData.location,
-        }
+        },
+        generalHelp: generalHelp
       });
     }
     
@@ -127,6 +130,28 @@ const Wizard = () => {
         );
 
       case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold mb-4">Additional Help</h2>
+              <p className="text-muted-foreground">Do you need any general assistance?</p>
+            </div>
+            <div className="max-w-md mx-auto">
+              <Label htmlFor="generalHelp">General Help Options</Label>
+              <Select value={generalHelp} onValueChange={setGeneralHelp}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general-help">General Help</SelectItem>
+                  <SelectItem value="no-other-help">No Other Help</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+
+      case 3:
         if (userType === 'business') {
           return (
             <div className="space-y-6">
@@ -207,7 +232,7 @@ const Wizard = () => {
           );
         }
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
@@ -251,7 +276,7 @@ const Wizard = () => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
@@ -265,6 +290,9 @@ const Wizard = () => {
               <CardContent className="space-y-4">
                 <div>
                   <strong>User Type:</strong> {userType}
+                </div>
+                <div>
+                  <strong>General Help:</strong> {generalHelp || 'Not selected'}
                 </div>
                 {userType === 'business' && (
                   <>
@@ -337,7 +365,10 @@ const Wizard = () => {
                     ) : (
                       <Button
                         onClick={handleNext}
-                        disabled={currentStep === 1 && !userType}
+                        disabled={
+                          (currentStep === 1 && !userType) ||
+                          (currentStep === 2 && !generalHelp)
+                        }
                       >
                         Next
                       </Button>
