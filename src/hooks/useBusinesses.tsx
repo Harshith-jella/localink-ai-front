@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -10,6 +9,8 @@ type BusinessInsert = Omit<Business, 'id' | 'created_at' | 'updated_at' | 'user_
   email?: string | null;
   phone?: string | null;
   website?: string | null;
+  description?: string | null;
+  address?: string | null;
 };
 
 export const useBusinesses = () => {
