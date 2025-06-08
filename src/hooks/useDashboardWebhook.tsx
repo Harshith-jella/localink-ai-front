@@ -48,13 +48,15 @@ export const useDashboardWebhook = () => {
       
       if (result.hasNewData && result.data) {
         const newData = result.data;
+        console.log('Processing webhook data:', newData);
+        console.log('Image URL in data:', newData.personalizedPromotions?.imageUrl);
         
-        // Only update if we have new data (different timestamp)
+        // Always update if we have data, regardless of timestamp to ensure we show the latest
+        setDashboardData(newData);
+        setLastFetchTime(newData.timestamp);
+        
+        // Only show toast if this is truly new data (different timestamp)
         if (!lastFetchTime || newData.timestamp !== lastFetchTime) {
-          console.log('New webhook data received:', newData);
-          setDashboardData(newData);
-          setLastFetchTime(newData.timestamp);
-          
           toast({
             title: "New Data Received!",
             description: "Dashboard updated with fresh data from n8n automation",
@@ -194,13 +196,13 @@ export const useDashboardWebhook = () => {
     setIsLoading(false);
   };
 
-  // Set up polling for new data every 10 seconds (more frequent for real-time feel)
+  // Set up polling for new data every 5 seconds (reduced from 10 for faster updates)
   useEffect(() => {
     // Fetch immediately on mount
     fetchWebhookData();
     
     // Set up interval for polling
-    const interval = setInterval(fetchWebhookData, 10000);
+    const interval = setInterval(fetchWebhookData, 5000);
     return () => clearInterval(interval);
   }, []);
 
