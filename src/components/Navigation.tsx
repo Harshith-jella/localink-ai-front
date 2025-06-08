@@ -47,10 +47,10 @@ const Navigation = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`text-sm font-medium transition-colors hover:text-primary-foreground/90 ${
+                  className={`text-sm font-semibold transition-colors hover:text-white ${
                     location.pathname === item.path
-                      ? "text-primary-foreground"
-                      : "text-primary-foreground/70"
+                      ? "text-white bg-primary-foreground/20 px-3 py-2 rounded-md"
+                      : "text-primary-foreground hover:bg-primary-foreground/10 px-3 py-2 rounded-md"
                   }`}
                 >
                   {item.name}
