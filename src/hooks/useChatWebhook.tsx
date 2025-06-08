@@ -63,7 +63,7 @@ export const useChatWebhook = () => {
         source: 'localink_chat',
       };
 
-      const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/chat-bot', {
+      const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook/chat-bot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ export const useChatWebhook = () => {
       
       // Fallback with no-cors mode
       try {
-        await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/chat-bot', {
+        await fetch('https://harshithjella3105.app.n8n.cloud/webhook/chat-bot', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
