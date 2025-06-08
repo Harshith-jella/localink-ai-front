@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +29,8 @@ const Wizard = () => {
     description: "",
     goalDescription: "",
     typesOfService: [] as string[],
-    consumerLocation: ""
+    consumerLocation: "",
+    lookingFor: ""
   });
 
   const { user } = useAuth();
@@ -38,7 +38,9 @@ const Wizard = () => {
   const { createConsumerData, isCreating: isCreatingConsumer } = useConsumers();
   const navigate = useNavigate();
 
-  const totalSteps = 5;
+  // Different total steps for business vs consumer
+  const getTotalSteps = () => userType === 'consumer' ? 4 : 5;
+  const totalSteps = getTotalSteps();
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
@@ -91,9 +93,9 @@ const Wizard = () => {
           location: formData.consumerLocation,
           typesOfService: formData.typesOfService,
         },
-        generalHelp: generalHelp,
-        analysisType: analysisType,
-        goalDescription: formData.goalDescription
+        generalHelp: formData.lookingFor,
+        analysisType: "consumer-search",
+        goalDescription: formData.lookingFor
       });
     }
     
@@ -220,7 +222,27 @@ const Wizard = () => {
         }
 
       case 3:
-        if (userType === 'business') {
+        if (userType === 'consumer') {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-4">What are you looking for?</h2>
+                <p className="text-muted-foreground">Tell us more about what you need</p>
+              </div>
+              <div>
+                <Label htmlFor="lookingFor">Describe what you're looking for *</Label>
+                <Textarea
+                  id="lookingFor"
+                  value={formData.lookingFor}
+                  onChange={(e) => handleInputChange('lookingFor', e.target.value)}
+                  placeholder="Describe the specific service or product you're looking for..."
+                  rows={4}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+          );
+        } else {
           return (
             <div className="space-y-6">
               <div className="text-center mb-8">
@@ -268,62 +290,71 @@ const Wizard = () => {
               </div>
             </div>
           );
+        }
+
+      case 4:
+        if (userType === 'consumer') {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-4">Ready to Launch</h2>
+                <p className="text-muted-foreground">Review your information and start your search</p>
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <strong>User Type:</strong> {userType}
+                  </div>
+                  <div>
+                    <strong>Location:</strong> {formData.consumerLocation}
+                  </div>
+                  <div>
+                    <strong>Services of Interest:</strong> {formData.typesOfService.join(', ') || 'None selected'}
+                  </div>
+                  <div>
+                    <strong>Looking for:</strong> {formData.lookingFor || 'Not specified'}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
         } else {
           return (
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold mb-4">Additional Help</h2>
-                <p className="text-muted-foreground">Do you need any general assistance?</p>
+                <h2 className="text-2xl font-bold mb-4">Analysis & Goals</h2>
+                <p className="text-muted-foreground">Choose your analysis type and describe your goals</p>
               </div>
-              <div className="max-w-md mx-auto">
-                <Label htmlFor="generalHelp">General Help Options</Label>
-                <Select value={generalHelp} onValueChange={setGeneralHelp}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general-help">General Help</SelectItem>
-                    <SelectItem value="no-other-help">No Other Help</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-6">
+                <div>
+                  <Label htmlFor="analysisType">Analysis Type</Label>
+                  <Select value={analysisType} onValueChange={setAnalysisType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select analysis type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="generate-promotions">Generate Promotions</SelectItem>
+                      <SelectItem value="sale-analysis">Sale Analysis</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="goalDescription">What is Goal?</Label>
+                  <Textarea
+                    id="goalDescription"
+                    value={formData.goalDescription}
+                    onChange={(e) => handleInputChange('goalDescription', e.target.value)}
+                    placeholder="Describe your specific goal or objective..."
+                    rows={4}
+                  />
+                </div>
               </div>
             </div>
           );
         }
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-4">Analysis & Goals</h2>
-              <p className="text-muted-foreground">Choose your analysis type and describe your goals</p>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="analysisType">Analysis Type</Label>
-                <Select value={analysisType} onValueChange={setAnalysisType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select analysis type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="generate-promotions">Generate Promotions</SelectItem>
-                    <SelectItem value="sale-analysis">Sale Analysis</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="goalDescription">What is Goal?</Label>
-                <Textarea
-                  id="goalDescription"
-                  value={formData.goalDescription}
-                  onChange={(e) => handleInputChange('goalDescription', e.target.value)}
-                  placeholder="Describe your specific goal or objective..."
-                  rows={4}
-                />
-              </div>
-            </div>
-          </div>
-        );
 
       case 5:
         return (
@@ -349,29 +380,15 @@ const Wizard = () => {
                 <div>
                   <strong>Goal:</strong> {formData.goalDescription || 'Not specified'}
                 </div>
-                {userType === 'business' && (
-                  <>
-                    <div>
-                      <strong>Business:</strong> {formData.businessName}
-                    </div>
-                    <div>
-                      <strong>Industry:</strong> {formData.industry}
-                    </div>
-                    <div>
-                      <strong>Location:</strong> {formData.location}
-                    </div>
-                  </>
-                )}
-                {userType === 'consumer' && (
-                  <>
-                    <div>
-                      <strong>Location:</strong> {formData.consumerLocation}
-                    </div>
-                    <div>
-                      <strong>Services of Interest:</strong> {formData.typesOfService.join(', ') || 'None selected'}
-                    </div>
-                  </>
-                )}
+                <div>
+                  <strong>Business:</strong> {formData.businessName}
+                </div>
+                <div>
+                  <strong>Industry:</strong> {formData.industry}
+                </div>
+                <div>
+                  <strong>Location:</strong> {formData.location}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -396,11 +413,14 @@ const Wizard = () => {
         }
       case 3:
         if (userType === 'consumer') {
-          return !generalHelp;
+          return !formData.lookingFor;
         }
         return false;
       case 4:
-        return !analysisType || !formData.goalDescription;
+        if (userType === 'business') {
+          return !analysisType || !formData.goalDescription;
+        }
+        return false;
       default:
         return false;
     }
