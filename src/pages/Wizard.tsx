@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ const Wizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [userType, setUserType] = useState("");
   const [generalHelp, setGeneralHelp] = useState("");
+  const [analysisType, setAnalysisType] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [formData, setFormData] = useState({
     businessName: "",
@@ -26,7 +28,8 @@ const Wizard = () => {
     location: "",
     description: "",
     goals: "",
-    challenges: ""
+    challenges: "",
+    goalDescription: ""
   });
 
   const { user } = useAuth();
@@ -68,7 +71,9 @@ const Wizard = () => {
         category: formData.industry,
         description: formData.description,
         address: formData.location,
-        generalHelp: generalHelp
+        generalHelp: generalHelp,
+        analysisType: analysisType,
+        goalDescription: formData.goalDescription
       });
     } else if (userType === 'consumer') {
       createConsumerData({
@@ -77,7 +82,9 @@ const Wizard = () => {
         preferences: {
           location: formData.location,
         },
-        generalHelp: generalHelp
+        generalHelp: generalHelp,
+        analysisType: analysisType,
+        goalDescription: formData.goalDescription
       });
     }
     
@@ -236,10 +243,32 @@ const Wizard = () => {
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-4">Goals & Challenges</h2>
-              <p className="text-muted-foreground">Help us understand your objectives</p>
+              <h2 className="text-2xl font-bold mb-4">Analysis & Goals</h2>
+              <p className="text-muted-foreground">Choose your analysis type and describe your goals</p>
             </div>
             <div className="space-y-6">
+              <div>
+                <Label htmlFor="analysisType">Analysis Type</Label>
+                <Select value={analysisType} onValueChange={setAnalysisType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select analysis type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="generate-promotions">Generate Promotions</SelectItem>
+                    <SelectItem value="sale-analysis">Sale Analysis</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="goalDescription">What is Goal?</Label>
+                <Textarea
+                  id="goalDescription"
+                  value={formData.goalDescription}
+                  onChange={(e) => handleInputChange('goalDescription', e.target.value)}
+                  placeholder="Describe your specific goal or objective..."
+                  rows={4}
+                />
+              </div>
               <div>
                 <Label htmlFor="goals">
                   {userType === 'business' ? 'What are your main business goals?' : 'What are you hoping to find?'}
@@ -293,6 +322,12 @@ const Wizard = () => {
                 </div>
                 <div>
                   <strong>General Help:</strong> {generalHelp || 'Not selected'}
+                </div>
+                <div>
+                  <strong>Analysis Type:</strong> {analysisType || 'Not selected'}
+                </div>
+                <div>
+                  <strong>Goal:</strong> {formData.goalDescription || 'Not specified'}
                 </div>
                 {userType === 'business' && (
                   <>
@@ -367,7 +402,8 @@ const Wizard = () => {
                         onClick={handleNext}
                         disabled={
                           (currentStep === 1 && !userType) ||
-                          (currentStep === 2 && !generalHelp)
+                          (currentStep === 2 && !generalHelp) ||
+                          (currentStep === 4 && (!analysisType || !formData.goalDescription))
                         }
                       >
                         Next

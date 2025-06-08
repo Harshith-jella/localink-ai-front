@@ -81,10 +81,14 @@ export const useBusinesses = () => {
   });
 
   const createBusinessMutation = useMutation({
-    mutationFn: async (business: Omit<BusinessInsert, 'user_id'> & { generalHelp?: string }) => {
+    mutationFn: async (business: Omit<BusinessInsert, 'user_id'> & { 
+      generalHelp?: string;
+      analysisType?: string;
+      goalDescription?: string;
+    }) => {
       if (!user) throw new Error('User not authenticated');
 
-      const { generalHelp, ...businessData } = business;
+      const { generalHelp, analysisType, goalDescription, ...businessData } = business;
 
       const { data, error } = await supabase
         .from('businesses')
@@ -96,7 +100,7 @@ export const useBusinesses = () => {
         .single();
 
       if (error) throw error;
-      return { ...data, generalHelp };
+      return { ...data, generalHelp, analysisType, goalDescription };
     },
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
@@ -114,6 +118,8 @@ export const useBusinesses = () => {
           email: data.email,
           website: data.website,
           generalHelp: data.generalHelp || 'not-selected',
+          analysisType: data.analysisType || 'not-selected',
+          goalDescription: data.goalDescription || 'not-specified',
           created_at: data.created_at,
         },
         user: {

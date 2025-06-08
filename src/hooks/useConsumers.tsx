@@ -81,6 +81,8 @@ export const useConsumers = () => {
           challenges: data.challenges,
           preferences: data.preferences || {},
           generalHelp: data.generalHelp || 'not-selected',
+          analysisType: data.analysisType || 'not-selected',
+          goalDescription: data.goalDescription || 'not-specified',
           created_at: data.created_at,
         },
         user: {
