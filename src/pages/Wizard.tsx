@@ -27,8 +27,6 @@ const Wizard = () => {
     industry: "",
     location: "",
     description: "",
-    goals: "",
-    challenges: "",
     goalDescription: ""
   });
 
@@ -77,8 +75,6 @@ const Wizard = () => {
       });
     } else if (userType === 'consumer') {
       createConsumerData({
-        goals: formData.goals,
-        challenges: formData.challenges,
         preferences: {
           location: formData.location,
         },
@@ -266,38 +262,6 @@ const Wizard = () => {
                   value={formData.goalDescription}
                   onChange={(e) => handleInputChange('goalDescription', e.target.value)}
                   placeholder="Describe your specific goal or objective..."
-                  rows={4}
-                />
-              </div>
-              <div>
-                <Label htmlFor="goals">
-                  {userType === 'business' ? 'What are your main business goals?' : 'What are you hoping to find?'}
-                </Label>
-                <Textarea
-                  id="goals"
-                  value={formData.goals}
-                  onChange={(e) => handleInputChange('goals', e.target.value)}
-                  placeholder={
-                    userType === 'business' 
-                      ? "e.g., Increase sales, expand customer base, improve marketing..."
-                      : "e.g., Find quality local services, discover new restaurants, support local businesses..."
-                  }
-                  rows={4}
-                />
-              </div>
-              <div>
-                <Label htmlFor="challenges">
-                  {userType === 'business' ? 'What challenges are you facing?' : 'What challenges do you face when finding local businesses?'}
-                </Label>
-                <Textarea
-                  id="challenges"
-                  value={formData.challenges}
-                  onChange={(e) => handleInputChange('challenges', e.target.value)}
-                  placeholder={
-                    userType === 'business'
-                      ? "e.g., Competition, customer acquisition, marketing budget..."
-                      : "e.g., Finding reliable reviews, discovering hidden gems, comparing options..."
-                  }
                   rows={4}
                 />
               </div>

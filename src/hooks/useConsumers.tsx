@@ -77,8 +77,6 @@ export const useConsumers = () => {
         event: 'consumer_registered',
         consumer: {
           user_type: 'consumer',
-          goals: data.goals,
-          challenges: data.challenges,
           preferences: data.preferences || {},
           generalHelp: data.generalHelp || 'not-selected',
           analysisType: data.analysisType || 'not-selected',
