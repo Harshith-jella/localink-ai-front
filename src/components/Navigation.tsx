@@ -31,14 +31,14 @@ const Navigation = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/95 backdrop-blur-md border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="gradient-bg rounded-lg p-2">
-                <Zap className="h-6 w-6 text-white" />
+              <div className="bg-background rounded-lg p-2">
+                <Zap className="h-6 w-6 text-primary" />
               </div>
-              <span className="text-xl font-bold gradient-text">LocaLink</span>
+              <span className="text-xl font-bold text-primary-foreground">LocaLink</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -47,10 +47,10 @@ const Navigation = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                  className={`text-sm font-medium transition-colors hover:text-primary-foreground/90 ${
                     location.pathname === item.path
-                      ? "text-primary"
-                      : "text-muted-foreground"
+                      ? "text-primary-foreground"
+                      : "text-primary-foreground/70"
                   }`}
                 >
                   {item.name}
@@ -60,7 +60,7 @@ const Navigation = () => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
                       <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -72,7 +72,7 @@ const Navigation = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button onClick={() => setShowAuthModal(true)}>
+                <Button onClick={() => setShowAuthModal(true)} variant="secondary">
                   Sign In
                 </Button>
               )}
@@ -83,6 +83,7 @@ const Navigation = () => {
               <Button
                 variant="ghost"
                 size="icon"
+                className="text-primary-foreground hover:bg-primary-foreground/10"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
                 {isMenuOpen ? (
@@ -97,15 +98,15 @@ const Navigation = () => {
           {/* Mobile Navigation */}
           {isMenuOpen && (
             <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-primary-foreground/10">
                 {navItems.map((item) => (
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`block px-3 py-2 text-base font-medium transition-colors hover:text-primary ${
+                    className={`block px-3 py-2 text-base font-medium transition-colors hover:text-primary-foreground/90 ${
                       location.pathname === item.path
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                        ? "text-primary-foreground"
+                        : "text-primary-foreground/70"
                     }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -116,7 +117,7 @@ const Navigation = () => {
                 {user ? (
                   <Button 
                     variant="ghost" 
-                    className="w-full justify-start px-3 py-2"
+                    className="w-full justify-start px-3 py-2 text-primary-foreground hover:bg-primary-foreground/10"
                     onClick={() => {
                       handleSignOut();
                       setIsMenuOpen(false);
@@ -128,6 +129,7 @@ const Navigation = () => {
                 ) : (
                   <Button 
                     className="w-full mt-2"
+                    variant="secondary"
                     onClick={() => {
                       setShowAuthModal(true);
                       setIsMenuOpen(false);
