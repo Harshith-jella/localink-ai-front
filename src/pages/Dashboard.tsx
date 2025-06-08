@@ -1,9 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
-import { ArrowUp, Search, Zap, Layout, Loader, Copy, Download, RefreshCw } from "lucide-react";
+import { ArrowUp, Search, Zap, Layout, Loader, Copy, Download, RefreshCw, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDashboardWebhook } from "@/hooks/useDashboardWebhook";
+import { useWebhookListener } from "@/hooks/useWebhookListener";
+import { useBusinesses } from "@/hooks/useBusinesses";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const { 
@@ -13,14 +16,36 @@ const Dashboard = () => {
     downloadImage, 
     triggerSampleWebhook 
   } = useDashboardWebhook();
+  
+  const {
+    webhookData,
+    isListening,
+    triggerAIAnalysis
+  } = useWebhookListener();
+  
+  const { businesses } = useBusinesses();
+
+  // Use webhook data if available, otherwise fall back to dashboard data
+  const displayData = webhookData || dashboardData;
+
+  // Get the most recent business for AI analysis
+  const latestBusiness = businesses && businesses.length > 0 ? businesses[0] : null;
+
+  const handleGenerateAIAnalysis = () => {
+    if (latestBusiness) {
+      triggerAIAnalysis(latestBusiness);
+    } else {
+      triggerSampleWebhook();
+    }
+  };
 
   const aiResults = [
     {
       title: "Personalized Promotions",
       icon: <Zap className="h-6 w-6" />,
       status: "complete",
-      content: dashboardData?.personalizedPromotions?.socialMediaDescription || 
-        "AI-generated promotional content will appear here. Click 'Generate Sample Data' to see an example.",
+      content: displayData?.personalizedPromotions?.socialMediaDescription || 
+        "AI-generated promotional content will appear here. Click 'Generate AI Analysis' to create personalized promotions based on your business data.",
       gradient: "from-blue-500 to-purple-600",
       available: true,
       type: "promotion"
@@ -29,8 +54,8 @@ const Dashboard = () => {
       title: "Sales Forecast",
       icon: <ArrowUp className="h-6 w-6" />,
       status: "complete",
-      content: dashboardData?.salesForecast?.forecast || 
-        "Sales forecasting data will appear here. Click 'Generate Sample Data' to see an example.",
+      content: displayData?.salesForecast?.forecast || 
+        "Sales forecasting data will appear here. Click 'Generate AI Analysis' to get revenue projections and insights.",
       gradient: "from-purple-500 to-pink-600",
       available: true,
       type: "forecast"
@@ -70,6 +95,9 @@ const Dashboard = () => {
               </Badge>
             </div>
           </div>
+          {isListening && (
+            <Loader className="h-4 w-4 animate-spin text-muted-foreground" />
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -78,23 +106,23 @@ const Dashboard = () => {
             {result.content}
           </p>
           
-          {dashboardData?.personalizedPromotions && (
+          {displayData?.personalizedPromotions && (
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => copyToClipboard(dashboardData.personalizedPromotions!.socialMediaDescription)}
+                  onClick={() => copyToClipboard(displayData.personalizedPromotions!.socialMediaDescription)}
                   className="flex items-center gap-2"
                 >
                   <Copy className="h-4 w-4" />
                   Copy Text
                 </Button>
-                {dashboardData.personalizedPromotions.imageUrl && (
+                {displayData.personalizedPromotions.imageUrl && (
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => downloadImage(dashboardData.personalizedPromotions!.imageUrl, 'promotion-image')}
+                    onClick={() => downloadImage(displayData.personalizedPromotions!.imageUrl, 'promotion-image')}
                     disabled={isLoading}
                     className="flex items-center gap-2"
                   >
@@ -104,10 +132,10 @@ const Dashboard = () => {
                 )}
               </div>
               
-              {dashboardData.personalizedPromotions.imageUrl && (
+              {displayData.personalizedPromotions.imageUrl && (
                 <div className="mt-4">
                   <img 
-                    src={dashboardData.personalizedPromotions.imageUrl} 
+                    src={displayData.personalizedPromotions.imageUrl} 
                     alt="Promotion visual" 
                     className="w-full max-w-sm rounded-lg shadow-md"
                   />
@@ -135,6 +163,9 @@ const Dashboard = () => {
               </Badge>
             </div>
           </div>
+          {isListening && (
+            <Loader className="h-4 w-4 animate-spin text-muted-foreground" />
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -143,12 +174,12 @@ const Dashboard = () => {
             {result.content}
           </p>
           
-          {dashboardData?.salesForecast && (
+          {displayData?.salesForecast && (
             <div className="space-y-3">
               <div className="bg-secondary/50 p-4 rounded-lg">
                 <h4 className="font-semibold text-sm mb-2">Key Insights:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  {dashboardData.salesForecast.keyInsights?.map((insight, index) => (
+                  {displayData.salesForecast.keyInsights?.map((insight, index) => (
                     <li key={index} className="flex items-start">
                       <span className="mr-2">•</span>
                       {insight}
@@ -161,7 +192,7 @@ const Dashboard = () => {
                 variant="outline" 
                 size="sm"
                 onClick={() => {
-                  const forecastText = `${dashboardData.salesForecast!.forecast}\n\nKey Insights:\n${dashboardData.salesForecast!.keyInsights?.join('\n') || ''}`;
+                  const forecastText = `${displayData.salesForecast!.forecast}\n\nKey Insights:\n${displayData.salesForecast!.keyInsights?.join('\n') || ''}`;
                   copyToClipboard(forecastText);
                 }}
                 className="flex items-center gap-2"
@@ -212,21 +243,40 @@ const Dashboard = () => {
               <h1 className="text-3xl md:text-4xl font-bold">
                 AI <span className="gradient-text">Dashboard</span>
               </h1>
-              <Button 
-                onClick={triggerSampleWebhook}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Generate Sample Data
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleGenerateAIAnalysis}
+                  disabled={isListening}
+                  className="flex items-center gap-2"
+                >
+                  {isListening ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {isListening ? 'Generating...' : 'Generate AI Analysis'}
+                </Button>
+                <Button 
+                  onClick={triggerSampleWebhook}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Sample Data
+                </Button>
+              </div>
             </div>
             <p className="text-xl text-muted-foreground">
               Your personalized business insights powered by artificial intelligence
             </p>
-            {dashboardData && (
+            {displayData && (
               <p className="text-sm text-muted-foreground mt-2">
-                Last updated: {new Date(dashboardData.timestamp).toLocaleString()}
+                Last updated: {new Date(displayData.timestamp).toLocaleString()}
+              </p>
+            )}
+            {latestBusiness && (
+              <p className="text-sm text-muted-foreground">
+                Analyzing: {latestBusiness.name} ({latestBusiness.category})
               </p>
             )}
           </div>
@@ -250,9 +300,14 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-4">
-                  <Button variant="outline" className="h-auto p-4 flex flex-col space-y-2">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col space-y-2"
+                    onClick={handleGenerateAIAnalysis}
+                    disabled={isListening}
+                  >
                     <Zap className="h-6 w-6" />
-                    <span>Generate New Promotion</span>
+                    <span>{isListening ? 'Generating...' : 'Generate New Analysis'}</span>
                     <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-xs">
                       Available
                     </Badge>
