@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from './use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PromotionData {
   socialMediaDescription: string;
@@ -26,53 +27,37 @@ export const useDashboardWebhook = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Function to send data to the new webhook
+  // Function to send data to the new Supabase proxy webhook
   const sendToWebhook = async (data: any) => {
     try {
-      console.log('Sending dashboard data to webhook:', data);
+      console.log('Sending dashboard data to Supabase proxy:', data);
       
-      const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
-        method: 'POST',
+      const { data: result, error } = await supabase.functions.invoke('dashboard-webhook-proxy', {
+        body: data,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
-        mode: 'cors',
-        body: JSON.stringify(data),
       });
       
-      if (!response.ok) {
-        console.warn('Dashboard webhook failed with status:', response.status);
-        // Try with no-cors as fallback
-        await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'no-cors',
-          body: JSON.stringify(data),
-        });
-        console.log('Dashboard webhook sent with no-cors mode');
-      } else {
-        const responseData = await response.text();
-        console.log('Dashboard webhook response:', responseData);
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
       }
+      
+      console.log('Dashboard webhook response:', result);
+      
+      toast({
+        title: "Success!",
+        description: "Data sent to webhook successfully",
+      });
+      
     } catch (error) {
       console.error('Dashboard webhook error:', error);
-      // Fallback attempt
-      try {
-        await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink-Dashboard', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'no-cors',
-          body: JSON.stringify(data),
-        });
-        console.log('Dashboard webhook sent via fallback');
-      } catch (fallbackError) {
-        console.error('Fallback dashboard webhook failed:', fallbackError);
-      }
+      toast({
+        title: "Webhook Error",
+        description: "Failed to send data to webhook",
+        variant: "destructive",
+      });
     }
   };
 
@@ -150,6 +135,30 @@ export const useDashboardWebhook = () => {
     await sendToWebhook(sampleData);
     setDashboardData(sampleData);
   };
+
+  // Function to poll for new webhook data
+  const checkForNewData = async () => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('dashboard-webhook-proxy', {
+        method: 'GET',
+      });
+      
+      if (error) {
+        console.error('Error checking for new data:', error);
+        return;
+      }
+      
+      console.log('Proxy status check:', result);
+    } catch (error) {
+      console.error('Error polling webhook proxy:', error);
+    }
+  };
+
+  // Set up polling for new data every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(checkForNewData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return {
     dashboardData,

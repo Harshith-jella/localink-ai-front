@@ -1,1 +1,5 @@
+
 project_id = "kadhfnujbszohuashfsk"
+
+[functions.dashboard-webhook-proxy]
+verify_jwt = false
