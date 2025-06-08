@@ -7,8 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// In-memory storage for webhook data (simple approach)
-let latestWebhookData: any = null;
+// Initialize Supabase client for persistent storage
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -45,9 +47,23 @@ serve(async (req) => {
         rawData: webhookData
       };
       
-      // Store the transformed data in memory
-      latestWebhookData = transformedData;
-      console.log('Stored transformed data:', transformedData);
+      // Store in a simple table for persistence across function calls
+      const { error: insertError } = await supabase
+        .from('webhook_data')
+        .upsert([
+          {
+            id: 'latest_dashboard_data',
+            data: transformedData,
+            updated_at: new Date().toISOString()
+          }
+        ])
+      
+      if (insertError) {
+        console.error('Error storing webhook data:', insertError)
+        // Fallback to in-memory storage if database fails
+      } else {
+        console.log('Stored transformed data in database:', transformedData);
+      }
       
       return new Response(
         JSON.stringify({ 
@@ -63,13 +79,19 @@ serve(async (req) => {
     }
     
     if (req.method === 'GET') {
-      // This endpoint returns the latest webhook data for the dashboard
-      if (latestWebhookData) {
-        console.log('Returning stored webhook data to dashboard');
+      // Try to get data from database first
+      const { data: storedData, error } = await supabase
+        .from('webhook_data')
+        .select('data, updated_at')
+        .eq('id', 'latest_dashboard_data')
+        .single()
+      
+      if (!error && storedData) {
+        console.log('Returning stored webhook data from database to dashboard');
         return new Response(
           JSON.stringify({ 
             success: true, 
-            data: latestWebhookData,
+            data: storedData.data,
             hasNewData: true
           }),
           {
@@ -78,6 +100,7 @@ serve(async (req) => {
           }
         )
       } else {
+        console.log('No webhook data found in database:', error);
         return new Response(
           JSON.stringify({ 
             success: true, 
