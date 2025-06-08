@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Navigation from "@/components/Navigation";
 import { ArrowUp, Loader, Zap } from "lucide-react";
+import { useChatWebhook } from "@/hooks/useChatWebhook";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: number;
@@ -18,13 +20,14 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      content: "Hello! I'm your LocaLink AI assistant. I can help you with business promotions, sales forecasting, customer analysis, and partnership recommendations. How can I assist you today?",
+      content: "Hello! I'm your LocaLink AI assistant connected to the webhook. I can help you with business promotions, sales forecasting, customer analysis, and partnership recommendations. How can I assist you today?",
       isUser: false,
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { sendChatToWebhook, isLoading } = useChatWebhook();
+  const { toast } = useToast();
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -37,20 +40,45 @@ const Chat = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue("");
-    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Send message to webhook and get response
+      const botResponse = await sendChatToWebhook(currentInput);
+      
       const aiResponse: Message = {
         id: messages.length + 2,
-        content: "Thank you for your question! Based on your business profile, I recommend focusing on customer retention strategies. Would you like me to generate specific promotional ideas for your business?",
+        content: botResponse,
         isUser: false,
         timestamp: new Date()
       };
+      
       setMessages(prev => [...prev, aiResponse]);
-      setIsLoading(false);
-    }, 2000);
+      
+      toast({
+        title: "Message sent!",
+        description: "Your message has been processed by the chatbot.",
+      });
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      const errorResponse: Message = {
+        id: messages.length + 2,
+        content: "Sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        isUser: false,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorResponse]);
+      
+      toast({
+        title: "Error",
+        description: "Failed to send message to chatbot. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -58,6 +86,14 @@ const Chat = () => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleQuickAsk = async (question: string) => {
+    setInputValue(question);
+    // Auto-send the quick ask question
+    setTimeout(() => {
+      handleSendMessage();
+    }, 100);
   };
 
   return (
@@ -71,7 +107,7 @@ const Chat = () => {
                 AI <span className="gradient-text">Assistant</span>
               </h1>
               <p className="text-xl text-muted-foreground">
-                Get instant insights and recommendations for your business
+                Get instant insights and recommendations for your business via webhook
               </p>
             </div>
 
@@ -82,6 +118,10 @@ const Chat = () => {
                     <Zap className="h-5 w-5 text-white" />
                   </div>
                   <span>LocaLink Assistant</span>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs text-muted-foreground">Webhook Connected</span>
+                  </div>
                 </CardTitle>
               </CardHeader>
               
@@ -111,7 +151,10 @@ const Chat = () => {
                     {isLoading && (
                       <div className="flex justify-start">
                         <div className="bg-muted p-4 rounded-lg">
-                          <Loader className="h-5 w-5 animate-spin" />
+                          <div className="flex items-center space-x-2">
+                            <Loader className="h-5 w-5 animate-spin" />
+                            <span className="text-sm">Sending to chatbot...</span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -133,7 +176,11 @@ const Chat = () => {
                       disabled={isLoading || !inputValue.trim()}
                       size="icon"
                     >
-                      <ArrowUp className="h-4 w-4" />
+                      {isLoading ? (
+                        <Loader className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ArrowUp className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -141,15 +188,24 @@ const Chat = () => {
             </Card>
 
             <div className="mt-8 grid md:grid-cols-3 gap-4">
-              <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow">
+              <Card 
+                className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleQuickAsk("Generate a promotion for the holidays")}
+              >
                 <p className="text-sm text-muted-foreground">Quick Ask</p>
                 <p className="font-medium">Generate a promotion for the holidays</p>
               </Card>
-              <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow">
+              <Card 
+                className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleQuickAsk("Analyze my customer feedback and provide insights")}
+              >
                 <p className="text-sm text-muted-foreground">Quick Ask</p>
                 <p className="font-medium">Analyze my customer feedback</p>
               </Card>
-              <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow">
+              <Card 
+                className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleQuickAsk("Find partnership opportunities in my area")}
+              >
                 <p className="text-sm text-muted-foreground">Quick Ask</p>
                 <p className="font-medium">Find partnership opportunities</p>
               </Card>
