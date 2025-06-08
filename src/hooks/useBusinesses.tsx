@@ -8,6 +8,27 @@ import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 type Business = Tables<'businesses'>;
 type BusinessInsert = TablesInsert<'businesses'>;
 
+// Webhook function to send data to n8n
+const sendToWebhook = async (businessData: any) => {
+  try {
+    const response = await fetch('https://harshithjella3105.app.n8n.cloud/webhook-test/Localink', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(businessData),
+    });
+    
+    if (!response.ok) {
+      console.warn('Webhook failed:', response.statusText);
+    } else {
+      console.log('Successfully sent data to webhook');
+    }
+  } catch (error) {
+    console.error('Webhook error:', error);
+  }
+};
+
 export const useBusinesses = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -45,8 +66,19 @@ export const useBusinesses = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      
+      // Send data to webhook
+      await sendToWebhook({
+        business: data,
+        user: {
+          id: user?.id,
+          email: user?.email,
+        },
+        timestamp: new Date().toISOString(),
+      });
+      
       toast({
         title: "Business created!",
         description: "Your business has been successfully added.",
