@@ -63,10 +63,14 @@ serve(async (req) => {
         console.log('Available fields:', Object.keys(webhookData));
       }
       
+      // Get the description/text content from n8n (handling the typo in field name)
+      const textContent = webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption || "New promotion generated from n8n workflow";
+      console.log('Using text content:', textContent.substring(0, 100) + '...');
+      
       // Transform the webhook data to match dashboard expectations
       const transformedData = {
         personalizedPromotions: {
-          socialMediaDescription: webhookData.Description || webhookData.description || webhookData.Descrption || "New promotion generated from n8n workflow",
+          socialMediaDescription: textContent,
           imageUrl: imageUrl,
           imageBlob: imageBlob
         },
@@ -84,7 +88,8 @@ serve(async (req) => {
         rawData: {
           ...webhookData,
           imageProcessed: !!imageData,
-          imageSize: imageData ? `${(imageData.length / 1024 / 1024).toFixed(2)} MB` : 'No image'
+          imageSize: imageData ? `${(imageData.length / 1024 / 1024).toFixed(2)} MB` : 'No image',
+          textContentLength: textContent.length
         }
       };
       
@@ -115,6 +120,7 @@ serve(async (req) => {
       }
       
       console.log('Successfully stored transformed data in database');
+      console.log('Text content stored:', textContent.substring(0, 100) + '...');
       console.log('Image URL stored:', transformedData.personalizedPromotions.imageUrl.substring(0, 50));
       
       return new Response(
@@ -122,7 +128,8 @@ serve(async (req) => {
           success: true, 
           message: 'Webhook data received and stored',
           transformedData: transformedData,
-          imageProcessed: !!imageData
+          imageProcessed: !!imageData,
+          textProcessed: textContent.length > 0
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -156,6 +163,7 @@ serve(async (req) => {
       
       if (storedData && storedData.data) {
         console.log('Returning stored webhook data from database to dashboard');
+        console.log('Text content being returned:', storedData.data.personalizedPromotions?.socialMediaDescription?.substring(0, 100) + '...');
         console.log('Image URL being returned:', storedData.data.personalizedPromotions?.imageUrl?.substring(0, 50));
         return new Response(
           JSON.stringify({ 
