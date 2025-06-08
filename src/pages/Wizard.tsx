@@ -87,6 +87,7 @@ const Wizard = () => {
         analysisType: analysisType,
         goalDescription: formData.goalDescription
       });
+      navigate('/dashboard');
     } else if (userType === 'consumer') {
       createConsumerData({
         preferences: {
@@ -97,9 +98,8 @@ const Wizard = () => {
         analysisType: "consumer-search",
         goalDescription: formData.lookingFor
       });
+      navigate('/consumer-dashboard');
     }
-    
-    navigate('/dashboard');
   };
 
   const serviceOptions = [
