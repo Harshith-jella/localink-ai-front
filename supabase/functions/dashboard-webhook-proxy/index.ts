@@ -63,8 +63,14 @@ serve(async (req) => {
         console.log('Available fields:', Object.keys(webhookData));
       }
       
-      // Get the description/text content from n8n (handling the typo in field name)
-      const textContent = webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption || "New promotion generated from n8n workflow";
+      // Get the description/text content from n8n (handling the typo in field name and prioritizing real content)
+      let textContent = webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption;
+      
+      // Only use fallback if no real content is found
+      if (!textContent || textContent.trim() === '') {
+        textContent = "New promotion generated from n8n workflow";
+      }
+      
       console.log('Using text content:', textContent.substring(0, 100) + '...');
       
       // Transform the webhook data to match dashboard expectations
@@ -89,7 +95,13 @@ serve(async (req) => {
           ...webhookData,
           imageProcessed: !!imageData,
           imageSize: imageData ? `${(imageData.length / 1024 / 1024).toFixed(2)} MB` : 'No image',
-          textContentLength: textContent.length
+          textContentLength: textContent.length,
+          originalTextFields: {
+            Description: webhookData.Description,
+            description: webhookData.description,
+            Descrption: webhookData.Descrption,
+            descrption: webhookData.descrption
+          }
         }
       };
       
@@ -129,7 +141,8 @@ serve(async (req) => {
           message: 'Webhook data received and stored',
           transformedData: transformedData,
           imageProcessed: !!imageData,
-          textProcessed: textContent.length > 0
+          textProcessed: textContent.length > 0,
+          realContentFound: !!(webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption)
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
