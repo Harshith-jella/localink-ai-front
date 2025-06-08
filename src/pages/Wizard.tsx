@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import Navigation from "@/components/Navigation";
 import { ArrowUp, Layout } from "lucide-react";
 import { useBusinesses } from "@/hooks/useBusinesses";
@@ -27,7 +28,9 @@ const Wizard = () => {
     industry: "",
     location: "",
     description: "",
-    goalDescription: ""
+    goalDescription: "",
+    typesOfService: [] as string[],
+    consumerLocation: ""
   });
 
   const { user } = useAuth();
@@ -57,6 +60,15 @@ const Wizard = () => {
     }));
   };
 
+  const handleServiceTypeChange = (serviceType: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      typesOfService: checked 
+        ? [...prev.typesOfService, serviceType]
+        : prev.typesOfService.filter(type => type !== serviceType)
+    }));
+  };
+
   const handleLaunch = () => {
     if (!user) {
       setShowAuthModal(true);
@@ -76,7 +88,8 @@ const Wizard = () => {
     } else if (userType === 'consumer') {
       createConsumerData({
         preferences: {
-          location: formData.location,
+          location: formData.consumerLocation,
+          typesOfService: formData.typesOfService,
         },
         generalHelp: generalHelp,
         analysisType: analysisType,
@@ -86,6 +99,17 @@ const Wizard = () => {
     
     navigate('/dashboard');
   };
+
+  const serviceOptions = [
+    "Retail",
+    "Food", 
+    "Personal Service",
+    "Home & Repair",
+    "Health",
+    "Family/ Pet",
+    "Tech",
+    "Event/ Entertainment"
+  ];
 
   const renderStep = () => {
     switch (currentStep) {
@@ -133,26 +157,67 @@ const Wizard = () => {
         );
 
       case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-4">Additional Help</h2>
-              <p className="text-muted-foreground">Do you need any general assistance?</p>
+        if (userType === 'consumer') {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-4">Service Preferences</h2>
+                <p className="text-muted-foreground">Tell us what you're looking for</p>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-base font-medium mb-4 block">Types of Service *</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {serviceOptions.map((service) => (
+                      <div key={service} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={service}
+                          checked={formData.typesOfService.includes(service)}
+                          onCheckedChange={(checked) => handleServiceTypeChange(service, checked as boolean)}
+                        />
+                        <Label htmlFor={service} className="text-sm font-normal">
+                          {service}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="consumerLocation" className="text-base font-medium">Your Location (City, State) *</Label>
+                  <Input
+                    id="consumerLocation"
+                    value={formData.consumerLocation}
+                    onChange={(e) => handleInputChange('consumerLocation', e.target.value)}
+                    placeholder="Enter your city and state"
+                    className="mt-2"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="max-w-md mx-auto">
-              <Label htmlFor="generalHelp">General Help Options</Label>
-              <Select value={generalHelp} onValueChange={setGeneralHelp}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an option" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general-help">General Help</SelectItem>
-                  <SelectItem value="no-other-help">No Other Help</SelectItem>
-                </SelectContent>
-              </Select>
+          );
+        } else {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-4">Additional Help</h2>
+                <p className="text-muted-foreground">Do you need any general assistance?</p>
+              </div>
+              <div className="max-w-md mx-auto">
+                <Label htmlFor="generalHelp">General Help Options</Label>
+                <Select value={generalHelp} onValueChange={setGeneralHelp}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general-help">General Help</SelectItem>
+                    <SelectItem value="no-other-help">No Other Help</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        );
+          );
+        }
 
       case 3:
         if (userType === 'business') {
@@ -207,29 +272,20 @@ const Wizard = () => {
           return (
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold mb-4">Consumer Information</h2>
-                <p className="text-muted-foreground">Tell us about your preferences</p>
+                <h2 className="text-2xl font-bold mb-4">Additional Help</h2>
+                <p className="text-muted-foreground">Do you need any general assistance?</p>
               </div>
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="location">Preferred Location</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    placeholder="City, State where you're looking for businesses"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">What are you looking for?</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Describe what kind of local businesses or services you're interested in..."
-                    rows={4}
-                  />
-                </div>
+              <div className="max-w-md mx-auto">
+                <Label htmlFor="generalHelp">General Help Options</Label>
+                <Select value={generalHelp} onValueChange={setGeneralHelp}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general-help">General Help</SelectItem>
+                    <SelectItem value="no-other-help">No Other Help</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           );
@@ -307,9 +363,14 @@ const Wizard = () => {
                   </>
                 )}
                 {userType === 'consumer' && (
-                  <div>
-                    <strong>Location:</strong> {formData.location}
-                  </div>
+                  <>
+                    <div>
+                      <strong>Location:</strong> {formData.consumerLocation}
+                    </div>
+                    <div>
+                      <strong>Services of Interest:</strong> {formData.typesOfService.join(', ') || 'None selected'}
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -322,6 +383,28 @@ const Wizard = () => {
   };
 
   const isCreating = isCreatingBusiness || isCreatingConsumer;
+
+  const getNextButtonDisabled = () => {
+    switch (currentStep) {
+      case 1:
+        return !userType;
+      case 2:
+        if (userType === 'consumer') {
+          return formData.typesOfService.length === 0 || !formData.consumerLocation;
+        } else {
+          return !generalHelp;
+        }
+      case 3:
+        if (userType === 'consumer') {
+          return !generalHelp;
+        }
+        return false;
+      case 4:
+        return !analysisType || !formData.goalDescription;
+      default:
+        return false;
+    }
+  };
 
   return (
     <>
@@ -364,11 +447,7 @@ const Wizard = () => {
                     ) : (
                       <Button
                         onClick={handleNext}
-                        disabled={
-                          (currentStep === 1 && !userType) ||
-                          (currentStep === 2 && !generalHelp) ||
-                          (currentStep === 4 && (!analysisType || !formData.goalDescription))
-                        }
+                        disabled={getNextButtonDisabled()}
                       >
                         Next
                       </Button>
