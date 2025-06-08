@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Navigation from "@/components/Navigation";
 import { ArrowUp, Layout } from "lucide-react";
 import { useBusinesses } from "@/hooks/useBusinesses";
+import { useConsumers } from "@/hooks/useConsumers";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/AuthModal";
@@ -28,7 +29,8 @@ const Wizard = () => {
   });
 
   const { user } = useAuth();
-  const { createBusiness, isCreating } = useBusinesses();
+  const { createBusiness, isCreating: isCreatingBusiness } = useBusinesses();
+  const { createConsumerData, isCreating: isCreatingConsumer } = useConsumers();
   const navigate = useNavigate();
 
   const totalSteps = 4;
@@ -65,6 +67,14 @@ const Wizard = () => {
         category: formData.industry,
         description: formData.description,
         address: formData.location,
+      });
+    } else if (userType === 'consumer') {
+      createConsumerData({
+        goals: formData.goals,
+        challenges: formData.challenges,
+        preferences: {
+          location: formData.location,
+        }
       });
     }
     
@@ -117,53 +127,85 @@ const Wizard = () => {
         );
 
       case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-4">Business Information</h2>
-              <p className="text-muted-foreground">Tell us about your business</p>
+        if (userType === 'business') {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-4">Business Information</h2>
+                <p className="text-muted-foreground">Tell us about your business</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="businessName">Business Name</Label>
+                  <Input
+                    id="businessName"
+                    value={formData.businessName}
+                    onChange={(e) => handleInputChange('businessName', e.target.value)}
+                    placeholder="Enter your business name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="industry">Industry</Label>
+                  <Input
+                    id="industry"
+                    value={formData.industry}
+                    onChange={(e) => handleInputChange('industry', e.target.value)}
+                    placeholder="e.g., Restaurant, Retail, Services"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    placeholder="City, State"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="description">Business Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Describe what your business does..."
+                    rows={4}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="businessName">Business Name</Label>
-                <Input
-                  id="businessName"
-                  value={formData.businessName}
-                  onChange={(e) => handleInputChange('businessName', e.target.value)}
-                  placeholder="Enter your business name"
-                />
+          );
+        } else {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-4">Consumer Information</h2>
+                <p className="text-muted-foreground">Tell us about your preferences</p>
               </div>
-              <div>
-                <Label htmlFor="industry">Industry</Label>
-                <Input
-                  id="industry"
-                  value={formData.industry}
-                  onChange={(e) => handleInputChange('industry', e.target.value)}
-                  placeholder="e.g., Restaurant, Retail, Services"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  placeholder="City, State"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="description">Business Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Describe what your business does..."
-                  rows={4}
-                />
+              <div className="space-y-6">
+                <div>
+                  <Label htmlFor="location">Preferred Location</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    placeholder="City, State where you're looking for businesses"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">What are you looking for?</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Describe what kind of local businesses or services you're interested in..."
+                    rows={4}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        );
+          );
+        }
 
       case 3:
         return (
@@ -174,22 +216,34 @@ const Wizard = () => {
             </div>
             <div className="space-y-6">
               <div>
-                <Label htmlFor="goals">What are your main business goals?</Label>
+                <Label htmlFor="goals">
+                  {userType === 'business' ? 'What are your main business goals?' : 'What are you hoping to find?'}
+                </Label>
                 <Textarea
                   id="goals"
                   value={formData.goals}
                   onChange={(e) => handleInputChange('goals', e.target.value)}
-                  placeholder="e.g., Increase sales, expand customer base, improve marketing..."
+                  placeholder={
+                    userType === 'business' 
+                      ? "e.g., Increase sales, expand customer base, improve marketing..."
+                      : "e.g., Find quality local services, discover new restaurants, support local businesses..."
+                  }
                   rows={4}
                 />
               </div>
               <div>
-                <Label htmlFor="challenges">What challenges are you facing?</Label>
+                <Label htmlFor="challenges">
+                  {userType === 'business' ? 'What challenges are you facing?' : 'What challenges do you face when finding local businesses?'}
+                </Label>
                 <Textarea
                   id="challenges"
                   value={formData.challenges}
                   onChange={(e) => handleInputChange('challenges', e.target.value)}
-                  placeholder="e.g., Competition, customer acquisition, marketing budget..."
+                  placeholder={
+                    userType === 'business'
+                      ? "e.g., Competition, customer acquisition, marketing budget..."
+                      : "e.g., Finding reliable reviews, discovering hidden gems, comparing options..."
+                  }
                   rows={4}
                 />
               </div>
@@ -225,6 +279,11 @@ const Wizard = () => {
                     </div>
                   </>
                 )}
+                {userType === 'consumer' && (
+                  <div>
+                    <strong>Location:</strong> {formData.location}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -234,6 +293,8 @@ const Wizard = () => {
         return null;
     }
   };
+
+  const isCreating = isCreatingBusiness || isCreatingConsumer;
 
   return (
     <>
@@ -271,7 +332,7 @@ const Wizard = () => {
                         onClick={handleLaunch}
                         disabled={isCreating}
                       >
-                        {isCreating ? "Creating..." : "Launch Dashboard"}
+                        {isCreating ? "Processing..." : "Launch Dashboard"}
                       </Button>
                     ) : (
                       <Button
