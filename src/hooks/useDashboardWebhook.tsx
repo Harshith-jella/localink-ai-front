@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface PromotionData {
   socialMediaDescription: string;
   imageUrl: string;
-  imageBlob?: Blob;
+  imageBlob?: string;
 }
 
 interface SalesForecastData {
@@ -20,14 +20,54 @@ interface WebhookData {
   personalizedPromotions?: PromotionData;
   salesForecast?: SalesForecastData;
   timestamp: string;
+  source?: string;
+  rawData?: any;
 }
 
 export const useDashboardWebhook = () => {
   const [dashboardData, setDashboardData] = useState<WebhookData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Function to send data to the new Supabase proxy webhook
+  // Function to fetch real webhook data from the proxy
+  const fetchWebhookData = async () => {
+    try {
+      console.log('Fetching webhook data from proxy...');
+      
+      const { data: result, error } = await supabase.functions.invoke('dashboard-webhook-proxy', {
+        method: 'GET',
+      });
+      
+      if (error) {
+        console.error('Error fetching webhook data:', error);
+        return;
+      }
+      
+      console.log('Webhook proxy response:', result);
+      
+      if (result.hasNewData && result.data) {
+        const newData = result.data;
+        
+        // Only update if we have new data (different timestamp)
+        if (!lastFetchTime || newData.timestamp !== lastFetchTime) {
+          console.log('New webhook data received:', newData);
+          setDashboardData(newData);
+          setLastFetchTime(newData.timestamp);
+          
+          toast({
+            title: "New Data Received!",
+            description: "Dashboard updated with fresh data from n8n automation",
+          });
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error fetching webhook data:', error);
+    }
+  };
+
+  // Function to send data to the webhook (for testing)
   const sendToWebhook = async (data: any) => {
     try {
       console.log('Sending dashboard data to Supabase proxy:', data);
@@ -83,16 +123,28 @@ export const useDashboardWebhook = () => {
   const downloadImage = async (imageUrl: string, filename: string = 'promotion-image') => {
     try {
       setIsLoading(true);
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${filename}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      
+      // Handle base64 images from webhook
+      if (imageUrl.startsWith('data:image/')) {
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `${filename}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Handle regular URLs
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
       
       toast({
         title: "Downloaded!",
@@ -133,30 +185,22 @@ export const useDashboardWebhook = () => {
     };
 
     await sendToWebhook(sampleData);
-    setDashboardData(sampleData);
   };
 
-  // Function to poll for new webhook data
-  const checkForNewData = async () => {
-    try {
-      const { data: result, error } = await supabase.functions.invoke('dashboard-webhook-proxy', {
-        method: 'GET',
-      });
-      
-      if (error) {
-        console.error('Error checking for new data:', error);
-        return;
-      }
-      
-      console.log('Proxy status check:', result);
-    } catch (error) {
-      console.error('Error polling webhook proxy:', error);
-    }
+  // Function to refresh data manually
+  const refreshData = async () => {
+    setIsLoading(true);
+    await fetchWebhookData();
+    setIsLoading(false);
   };
 
-  // Set up polling for new data every 30 seconds
+  // Set up polling for new data every 10 seconds (more frequent for real-time feel)
   useEffect(() => {
-    const interval = setInterval(checkForNewData, 30000);
+    // Fetch immediately on mount
+    fetchWebhookData();
+    
+    // Set up interval for polling
+    const interval = setInterval(fetchWebhookData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -167,6 +211,8 @@ export const useDashboardWebhook = () => {
     copyToClipboard,
     downloadImage,
     triggerSampleWebhook,
-    sendToWebhook
+    sendToWebhook,
+    refreshData,
+    fetchWebhookData
   };
 };

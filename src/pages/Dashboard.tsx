@@ -11,7 +11,8 @@ const Dashboard = () => {
     isLoading, 
     copyToClipboard, 
     downloadImage, 
-    triggerSampleWebhook 
+    triggerSampleWebhook,
+    refreshData
   } = useDashboardWebhook();
 
   const aiResults = [
@@ -20,7 +21,7 @@ const Dashboard = () => {
       icon: <Zap className="h-6 w-6" />,
       status: "complete",
       content: dashboardData?.personalizedPromotions?.socialMediaDescription || 
-        "AI-generated promotional content will appear here. Click 'Generate Sample Data' to see an example.",
+        "AI-generated promotional content will appear here. Connect your n8n automation or click 'Generate Sample Data' to see an example.",
       gradient: "from-blue-500 to-purple-600",
       available: true,
       type: "promotion"
@@ -30,7 +31,7 @@ const Dashboard = () => {
       icon: <ArrowUp className="h-6 w-6" />,
       status: "complete",
       content: dashboardData?.salesForecast?.forecast || 
-        "Sales forecasting data will appear here. Click 'Generate Sample Data' to see an example.",
+        "Sales forecasting data will appear here. Connect your n8n automation or click 'Generate Sample Data' to see an example.",
       gradient: "from-purple-500 to-pink-600",
       available: true,
       type: "forecast"
@@ -68,6 +69,11 @@ const Dashboard = () => {
               <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                 Available
               </Badge>
+              {dashboardData?.source === 'n8n_webhook' && (
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  Live Data
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -133,6 +139,11 @@ const Dashboard = () => {
               <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                 Available
               </Badge>
+              {dashboardData?.source === 'n8n_webhook' && (
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  Live Data
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -212,22 +223,40 @@ const Dashboard = () => {
               <h1 className="text-3xl md:text-4xl font-bold">
                 AI <span className="gradient-text">Dashboard</span>
               </h1>
-              <Button 
-                onClick={triggerSampleWebhook}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Generate Sample Data
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={refreshData}
+                  variant="outline"
+                  disabled={isLoading}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh Data
+                </Button>
+                <Button 
+                  onClick={triggerSampleWebhook}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Generate Sample Data
+                </Button>
+              </div>
             </div>
             <p className="text-xl text-muted-foreground">
               Your personalized business insights powered by artificial intelligence
             </p>
             {dashboardData && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Last updated: {new Date(dashboardData.timestamp).toLocaleString()}
-              </p>
+              <div className="flex items-center gap-4 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  Last updated: {new Date(dashboardData.timestamp).toLocaleString()}
+                </p>
+                {dashboardData.source === 'n8n_webhook' && (
+                  <Badge variant="outline" className="text-green-600 border-green-600">
+                    🔗 Connected to n8n Automation
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
 
