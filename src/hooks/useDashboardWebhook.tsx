@@ -50,6 +50,7 @@ export const useDashboardWebhook = () => {
         const newData = result.data;
         console.log('Processing webhook data:', newData);
         console.log('Image URL in data:', newData.personalizedPromotions?.imageUrl);
+        console.log('Promotional content:', newData.personalizedPromotions?.socialMediaDescription?.substring(0, 200) + '...');
         
         // Always update if we have data, regardless of timestamp to ensure we show the latest
         setDashboardData(newData);
@@ -66,40 +67,6 @@ export const useDashboardWebhook = () => {
       
     } catch (error) {
       console.error('Error fetching webhook data:', error);
-    }
-  };
-
-  // Function to send data to the webhook (for testing)
-  const sendToWebhook = async (data: any) => {
-    try {
-      console.log('Sending dashboard data to Supabase proxy:', data);
-      
-      const { data: result, error } = await supabase.functions.invoke('dashboard-webhook-proxy', {
-        body: data,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-      
-      console.log('Dashboard webhook response:', result);
-      
-      toast({
-        title: "Success!",
-        description: "Data sent to webhook successfully",
-      });
-      
-    } catch (error) {
-      console.error('Dashboard webhook error:', error);
-      toast({
-        title: "Webhook Error",
-        description: "Failed to send data to webhook",
-        variant: "destructive",
-      });
     }
   };
 
@@ -164,31 +131,6 @@ export const useDashboardWebhook = () => {
     }
   };
 
-  // Function to trigger webhook with sample data (for testing)
-  const triggerSampleWebhook = async () => {
-    const sampleData = {
-      event: 'dashboard_data_update',
-      personalizedPromotions: {
-        socialMediaDescription: "🎉 FLASH SALE ALERT! Get 25% off all coffee drinks from 2-4 PM today! Perfect for your afternoon pick-me-up. ☕ #CoffeeLovers #FlashSale #AfternoonTreat",
-        imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&h=600&fit=crop"
-      },
-      salesForecast: {
-        forecast: "Q4 Revenue Projection: $45,000 (+18% vs Q3)",
-        projectedRevenue: "$45,000",
-        keyInsights: [
-          "Peak sales expected in November",
-          "30% inventory increase recommended",
-          "Best-selling items: Coffee drinks and pastries",
-          "Weekend sales 40% higher than weekdays"
-        ]
-      },
-      timestamp: new Date().toISOString(),
-      source: 'dashboard_webhook'
-    };
-
-    await sendToWebhook(sampleData);
-  };
-
   // Function to refresh data manually
   const refreshData = async () => {
     setIsLoading(true);
@@ -212,8 +154,6 @@ export const useDashboardWebhook = () => {
     isLoading,
     copyToClipboard,
     downloadImage,
-    triggerSampleWebhook,
-    sendToWebhook,
     refreshData,
     fetchWebhookData
   };

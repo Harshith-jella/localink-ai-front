@@ -66,12 +66,20 @@ serve(async (req) => {
       // Get the description/text content from n8n (handling the typo in field name and prioritizing real content)
       let textContent = webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption;
       
-      // Only use fallback if no real content is found
-      if (!textContent || textContent.trim() === '') {
-        textContent = "New promotion generated from n8n workflow";
-      }
+      console.log('Raw text fields:', {
+        Description: webhookData.Description,
+        description: webhookData.description,
+        Descrption: webhookData.Descrption,
+        descrption: webhookData.descrption
+      });
       
-      console.log('Using text content:', textContent.substring(0, 100) + '...');
+      // NEVER use fallback text if we have real content from n8n
+      if (!textContent || textContent.trim() === '') {
+        console.log('No promotional content found in webhook - this should not happen with real n8n data');
+        textContent = "No promotional content received from n8n";
+      } else {
+        console.log('Using REAL promotional content from n8n:', textContent.substring(0, 200) + '...');
+      }
       
       // Transform the webhook data to match dashboard expectations
       const transformedData = {
@@ -96,12 +104,11 @@ serve(async (req) => {
           imageProcessed: !!imageData,
           imageSize: imageData ? `${(imageData.length / 1024 / 1024).toFixed(2)} MB` : 'No image',
           textContentLength: textContent.length,
-          originalTextFields: {
-            Description: webhookData.Description,
-            description: webhookData.description,
-            Descrption: webhookData.Descrption,
-            descrption: webhookData.descrption
-          }
+          realContentUsed: !!(webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption),
+          contentSource: webhookData.Description ? 'Description' : 
+                        webhookData.description ? 'description' : 
+                        webhookData.Descrption ? 'Descrption' : 
+                        webhookData.descrption ? 'descrption' : 'none'
         }
       };
       
@@ -131,18 +138,19 @@ serve(async (req) => {
         )
       }
       
-      console.log('Successfully stored transformed data in database');
-      console.log('Text content stored:', textContent.substring(0, 100) + '...');
-      console.log('Image URL stored:', transformedData.personalizedPromotions.imageUrl.substring(0, 50));
+      console.log('Successfully stored REAL promotional content in database');
+      console.log('Content source field:', transformedData.rawData.contentSource);
+      console.log('Real content stored:', textContent.substring(0, 200) + '...');
       
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'Webhook data received and stored',
+          message: 'Real webhook data received and stored',
           transformedData: transformedData,
           imageProcessed: !!imageData,
           textProcessed: textContent.length > 0,
-          realContentFound: !!(webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption)
+          realContentFound: !!(webhookData.Description || webhookData.description || webhookData.Descrption || webhookData.descrption),
+          contentSource: transformedData.rawData.contentSource
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -175,9 +183,10 @@ serve(async (req) => {
       }
       
       if (storedData && storedData.data) {
-        console.log('Returning stored webhook data from database to dashboard');
-        console.log('Text content being returned:', storedData.data.personalizedPromotions?.socialMediaDescription?.substring(0, 100) + '...');
-        console.log('Image URL being returned:', storedData.data.personalizedPromotions?.imageUrl?.substring(0, 50));
+        console.log('Returning REAL promotional content from database to dashboard');
+        console.log('Content length being returned:', storedData.data.personalizedPromotions?.socialMediaDescription?.length);
+        console.log('Content preview:', storedData.data.personalizedPromotions?.socialMediaDescription?.substring(0, 200) + '...');
+        console.log('Content source was:', storedData.data.rawData?.contentSource);
         return new Response(
           JSON.stringify({ 
             success: true, 

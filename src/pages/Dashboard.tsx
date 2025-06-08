@@ -12,7 +12,6 @@ const Dashboard = () => {
     isLoading, 
     copyToClipboard, 
     downloadImage, 
-    triggerSampleWebhook,
     refreshData
   } = useDashboardWebhook();
 
@@ -44,9 +43,9 @@ const Dashboard = () => {
       icon: <Zap className="h-6 w-6" />,
       status: "complete",
       content: dashboardData?.personalizedPromotions?.socialMediaDescription || 
-        "AI-generated promotional content will appear here. Connect your n8n automation or click 'Generate Sample Data' to see an example.",
+        "Connect your n8n automation to see AI-generated promotional content here. Your workflow data will appear automatically.",
       gradient: "from-blue-500 to-purple-600",
-      available: true,
+      available: !!dashboardData?.personalizedPromotions?.socialMediaDescription,
       type: "promotion"
     },
     {
@@ -54,9 +53,9 @@ const Dashboard = () => {
       icon: <ArrowUp className="h-6 w-6" />,
       status: "complete",
       content: dashboardData?.salesForecast?.forecast || 
-        "Sales forecasting data will appear here. Connect your n8n automation or click 'Generate Sample Data' to see an example.",
+        "Connect your n8n automation to see sales forecasting data here. Your workflow data will appear automatically.",
       gradient: "from-purple-500 to-pink-600",
-      available: true,
+      available: !!dashboardData?.salesForecast?.forecast,
       type: "forecast"
     },
     {
@@ -83,9 +82,10 @@ const Dashboard = () => {
     const textKey = 'promotion-text';
     const isExpanded = expandedText[textKey];
     const shouldShowToggle = result.content.length > 150;
+    const hasRealData = result.available;
 
     return (
-      <Card className="shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+      <Card className={`shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ${!hasRealData ? 'opacity-60 border-dashed' : ''}`}>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -94,12 +94,18 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <CardTitle className="text-lg">{result.title}</CardTitle>
-                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                  Available
-                </Badge>
-                {dashboardData?.source === 'n8n_webhook' && (
-                  <Badge variant="outline" className="text-green-600 border-green-600">
+                {hasRealData ? (
+                  <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                     Live Data
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    Waiting for Data
+                  </Badge>
+                )}
+                {dashboardData?.source === 'n8n_webhook' && hasRealData && (
+                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                    n8n Connected
                   </Badge>
                 )}
               </div>
@@ -108,7 +114,7 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="bg-muted/50 p-4 rounded-lg">
+            <div className={`p-4 rounded-lg ${hasRealData ? 'bg-muted/50' : 'bg-orange-50 border border-orange-200'}`}>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {isExpanded || !shouldShowToggle ? result.content : truncateText(result.content)}
               </p>
@@ -128,7 +134,7 @@ const Dashboard = () => {
               )}
             </div>
             
-            {dashboardData?.personalizedPromotions && (
+            {hasRealData && dashboardData?.personalizedPromotions && (
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   <Button 
@@ -186,9 +192,10 @@ const Dashboard = () => {
     const textKey = 'forecast-text';
     const isExpanded = expandedText[textKey];
     const shouldShowToggle = result.content.length > 150;
+    const hasRealData = result.available;
 
     return (
-      <Card className="shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+      <Card className={`shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ${!hasRealData ? 'opacity-60 border-dashed' : ''}`}>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -197,12 +204,18 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <CardTitle className="text-lg">{result.title}</CardTitle>
-                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                  Available
-                </Badge>
-                {dashboardData?.source === 'n8n_webhook' && (
-                  <Badge variant="outline" className="text-green-600 border-green-600">
+                {hasRealData ? (
+                  <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                     Live Data
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    Waiting for Data
+                  </Badge>
+                )}
+                {dashboardData?.source === 'n8n_webhook' && hasRealData && (
+                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                    n8n Connected
                   </Badge>
                 )}
               </div>
@@ -211,7 +224,7 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="bg-muted/50 p-4 rounded-lg">
+            <div className={`p-4 rounded-lg ${hasRealData ? 'bg-muted/50' : 'bg-orange-50 border border-orange-200'}`}>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {isExpanded || !shouldShowToggle ? result.content : truncateText(result.content)}
               </p>
@@ -231,7 +244,7 @@ const Dashboard = () => {
               )}
             </div>
             
-            {dashboardData?.salesForecast && (
+            {hasRealData && dashboardData?.salesForecast && (
               <div className="space-y-3">
                 {dashboardData.salesForecast.projectedRevenue && (
                   <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
@@ -318,29 +331,30 @@ const Dashboard = () => {
                   <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                   Refresh Data
                 </Button>
-                <Button 
-                  onClick={triggerSampleWebhook}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Generate Sample Data
-                </Button>
               </div>
             </div>
             <p className="text-xl text-muted-foreground">
-              Your personalized business insights powered by artificial intelligence
+              Your personalized business insights powered by n8n automation
             </p>
-            {dashboardData && (
+            {dashboardData ? (
               <div className="flex items-center gap-4 mt-2">
                 <p className="text-sm text-muted-foreground">
                   Last updated: {new Date(dashboardData.timestamp).toLocaleString()}
                 </p>
                 {dashboardData.source === 'n8n_webhook' && (
                   <Badge variant="outline" className="text-green-600 border-green-600">
-                    🔗 Connected to n8n Automation
+                    🔗 n8n Automation Active
                   </Badge>
                 )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 mt-2">
+                <Badge variant="outline" className="text-orange-600 border-orange-600">
+                  ⏳ Waiting for n8n workflow data
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  Send data from your n8n workflow to see it here
+                </p>
               </div>
             )}
           </div>
@@ -366,9 +380,9 @@ const Dashboard = () => {
                 <div className="grid md:grid-cols-3 gap-4">
                   <Button variant="outline" className="h-auto p-4 flex flex-col space-y-2">
                     <Zap className="h-6 w-6" />
-                    <span>Generate New Promotion</span>
-                    <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-xs">
-                      Available
+                    <span>Connect n8n Workflow</span>
+                    <Badge variant="default" className="bg-blue-500 hover:bg-blue-600 text-xs">
+                      Send webhook data
                     </Badge>
                   </Button>
                   <Button variant="outline" className="h-auto p-4 flex flex-col space-y-2" disabled>
