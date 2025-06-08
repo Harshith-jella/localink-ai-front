@@ -9,133 +9,144 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      medication_logs: {
+      analytics: {
         Row: {
+          ai_insights: Json | null
+          business_id: string
           created_at: string
           date: string
+          forecast: boolean | null
           id: string
-          medication_id: string
-          scheduled_time: string
-          taken_at: string | null
-          user_id: string
+          metric_type: string
+          metric_value: number
         }
         Insert: {
+          ai_insights?: Json | null
+          business_id: string
           created_at?: string
-          date?: string
+          date: string
+          forecast?: boolean | null
           id?: string
-          medication_id: string
-          scheduled_time: string
-          taken_at?: string | null
-          user_id: string
+          metric_type: string
+          metric_value: number
         }
         Update: {
+          ai_insights?: Json | null
+          business_id?: string
           created_at?: string
           date?: string
+          forecast?: boolean | null
           id?: string
-          medication_id?: string
-          scheduled_time?: string
-          taken_at?: string | null
-          user_id?: string
+          metric_type?: string
+          metric_value?: number
         }
         Relationships: [
           {
-            foreignKeyName: "medication_logs_medication_id_fkey"
-            columns: ["medication_id"]
+            foreignKeyName: "analytics_business_id_fkey"
+            columns: ["business_id"]
             isOneToOne: false
-            referencedRelation: "medications"
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
       }
-      medications: {
+      businesses: {
         Row: {
-          color: string
+          address: string | null
+          category: string
           created_at: string
-          dosage: string
-          frequency: string
+          description: string | null
+          email: string | null
           id: string
           name: string
-          times: string[]
+          phone: string | null
           updated_at: string
           user_id: string
+          website: string | null
         }
         Insert: {
-          color?: string
+          address?: string | null
+          category: string
           created_at?: string
-          dosage: string
-          frequency: string
+          description?: string | null
+          email?: string | null
           id?: string
           name: string
-          times?: string[]
+          phone?: string | null
           updated_at?: string
           user_id: string
+          website?: string | null
         }
         Update: {
-          color?: string
+          address?: string | null
+          category?: string
           created_at?: string
-          dosage?: string
-          frequency?: string
+          description?: string | null
+          email?: string | null
           id?: string
           name?: string
-          times?: string[]
+          phone?: string | null
           updated_at?: string
           user_id?: string
+          website?: string | null
         }
         Relationships: []
       }
-      onboarding_submissions: {
+      promotions: {
         Row: {
-          age: number
+          ai_generated: boolean | null
+          business_id: string
           created_at: string
-          date_of_birth: string | null
-          doctor_summary: string | null
-          email_or_phone: string
-          full_name: string
-          health_categories: string[]
-          patient_advice: string | null
-          platform: string | null
-          submitted_at: string
-          symptoms: string
+          description: string
+          discount_amount: number | null
+          discount_percentage: number | null
+          end_date: string
+          id: string
+          start_date: string
+          status: string | null
+          target_audience: string | null
+          title: string
           updated_at: string
-          webhook_sent: boolean | null
-          webhook_sent_at: string | null
-          weight: number | null
         }
         Insert: {
-          age: number
+          ai_generated?: boolean | null
+          business_id: string
           created_at?: string
-          date_of_birth?: string | null
-          doctor_summary?: string | null
-          email_or_phone: string
-          full_name: string
-          health_categories?: string[]
-          patient_advice?: string | null
-          platform?: string | null
-          submitted_at?: string
-          symptoms: string
+          description: string
+          discount_amount?: number | null
+          discount_percentage?: number | null
+          end_date: string
+          id?: string
+          start_date: string
+          status?: string | null
+          target_audience?: string | null
+          title: string
           updated_at?: string
-          webhook_sent?: boolean | null
-          webhook_sent_at?: string | null
-          weight?: number | null
         }
         Update: {
-          age?: number
+          ai_generated?: boolean | null
+          business_id?: string
           created_at?: string
-          date_of_birth?: string | null
-          doctor_summary?: string | null
-          email_or_phone?: string
-          full_name?: string
-          health_categories?: string[]
-          patient_advice?: string | null
-          platform?: string | null
-          submitted_at?: string
-          symptoms?: string
+          description?: string
+          discount_amount?: number | null
+          discount_percentage?: number | null
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string | null
+          target_audience?: string | null
+          title?: string
           updated_at?: string
-          webhook_sent?: boolean | null
-          webhook_sent_at?: string | null
-          weight?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promotions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

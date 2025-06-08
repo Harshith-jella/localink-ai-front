@@ -9,10 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Navigation from "@/components/Navigation";
 import { ArrowUp, Layout } from "lucide-react";
+import { useBusinesses } from "@/hooks/useBusinesses";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import AuthModal from "@/components/AuthModal";
 
 const Wizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [userType, setUserType] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [formData, setFormData] = useState({
     businessName: "",
     industry: "",
@@ -21,6 +26,10 @@ const Wizard = () => {
     goals: "",
     challenges: ""
   });
+
+  const { user } = useAuth();
+  const { createBusiness, isCreating } = useBusinesses();
+  const navigate = useNavigate();
 
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
@@ -42,6 +51,24 @@ const Wizard = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleLaunch = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (userType === 'business' && formData.businessName && formData.industry) {
+      createBusiness({
+        name: formData.businessName,
+        category: formData.industry,
+        description: formData.description,
+        address: formData.location,
+      });
+    }
+    
+    navigate('/dashboard');
   };
 
   const renderStep = () => {
@@ -185,15 +212,19 @@ const Wizard = () => {
                 <div>
                   <strong>User Type:</strong> {userType}
                 </div>
-                <div>
-                  <strong>Business:</strong> {formData.businessName}
-                </div>
-                <div>
-                  <strong>Industry:</strong> {formData.industry}
-                </div>
-                <div>
-                  <strong>Location:</strong> {formData.location}
-                </div>
+                {userType === 'business' && (
+                  <>
+                    <div>
+                      <strong>Business:</strong> {formData.businessName}
+                    </div>
+                    <div>
+                      <strong>Industry:</strong> {formData.industry}
+                    </div>
+                    <div>
+                      <strong>Location:</strong> {formData.location}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -205,54 +236,64 @@ const Wizard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <div className="pt-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="max-w-2xl mx-auto">
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-muted-foreground">
-                  Step {currentStep} of {totalSteps}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {Math.round(progress)}% Complete
-                </span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-
-            <Card className="shadow-lg">
-              <CardContent className="p-8">
-                {renderStep()}
-
-                <div className="flex justify-between mt-8">
-                  <Button
-                    variant="outline"
-                    onClick={handlePrevious}
-                    disabled={currentStep === 1}
-                  >
-                    Previous
-                  </Button>
-                  {currentStep === totalSteps ? (
-                    <Button onClick={() => window.location.href = '/dashboard'}>
-                      Launch Dashboard
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleNext}
-                      disabled={currentStep === 1 && !userType}
-                    >
-                      Next
-                    </Button>
-                  )}
+    <>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-16">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-2xl mx-auto">
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm text-muted-foreground">
+                    Step {currentStep} of {totalSteps}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {Math.round(progress)}% Complete
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
+                <Progress value={progress} className="h-2" />
+              </div>
+
+              <Card className="shadow-lg">
+                <CardContent className="p-8">
+                  {renderStep()}
+
+                  <div className="flex justify-between mt-8">
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevious}
+                      disabled={currentStep === 1}
+                    >
+                      Previous
+                    </Button>
+                    {currentStep === totalSteps ? (
+                      <Button 
+                        onClick={handleLaunch}
+                        disabled={isCreating}
+                      >
+                        {isCreating ? "Creating..." : "Launch Dashboard"}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleNext}
+                        disabled={currentStep === 1 && !userType}
+                      >
+                        Next
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
+    </>
   );
 };
 
