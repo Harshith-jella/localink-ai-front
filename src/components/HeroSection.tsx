@@ -12,8 +12,8 @@ const HeroSection = () => {
         <SplineBackground />
       </div>
       
-      {/* Overlay to ensure text readability */}
-      <div className="absolute inset-0 bg-background/30 backdrop-blur-[1px]" style={{ zIndex: 2 }} />
+      {/* Minimal overlay for text readability - removed whitish background */}
+      <div className="absolute inset-0 bg-black/10" style={{ zIndex: 2 }} />
 
       {/* Animated background elements - reduced opacity */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-purple-500/3" style={{ zIndex: 3 }} />
