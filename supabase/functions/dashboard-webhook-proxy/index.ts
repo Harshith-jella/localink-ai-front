@@ -47,7 +47,7 @@ serve(async (req) => {
         rawData: webhookData
       };
       
-      // Store in a simple table for persistence across function calls
+      // Store in the webhook_data table for persistence across function calls
       const { error: insertError } = await supabase
         .from('webhook_data')
         .upsert([
@@ -60,10 +60,20 @@ serve(async (req) => {
       
       if (insertError) {
         console.error('Error storing webhook data:', insertError)
-        // Fallback to in-memory storage if database fails
-      } else {
-        console.log('Stored transformed data in database:', transformedData);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Failed to store webhook data',
+            details: insertError.message
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          }
+        )
       }
+      
+      console.log('Successfully stored transformed data in database:', transformedData);
       
       return new Response(
         JSON.stringify({ 
@@ -79,20 +89,36 @@ serve(async (req) => {
     }
     
     if (req.method === 'GET') {
-      // Try to get data from database first
+      // Try to get data from database
       const { data: storedData, error } = await supabase
         .from('webhook_data')
         .select('data, updated_at')
         .eq('id', 'latest_dashboard_data')
-        .single()
+        .maybeSingle()
       
-      if (!error && storedData) {
+      if (error) {
+        console.error('Error fetching webhook data:', error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Failed to fetch webhook data',
+            details: error.message
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          }
+        )
+      }
+      
+      if (storedData && storedData.data) {
         console.log('Returning stored webhook data from database to dashboard');
         return new Response(
           JSON.stringify({ 
             success: true, 
             data: storedData.data,
-            hasNewData: true
+            hasNewData: true,
+            lastUpdated: storedData.updated_at
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -100,7 +126,7 @@ serve(async (req) => {
           }
         )
       } else {
-        console.log('No webhook data found in database:', error);
+        console.log('No webhook data found in database');
         return new Response(
           JSON.stringify({ 
             success: true, 
